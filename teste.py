@@ -35,3 +35,20 @@ print(a)
 
 #não é tupla
 tupla_01 = (1)
+
+# ---------------------------------------------
+
+#dicionários são mutáveis e possuem rótulos, para manter a semântica dos dados
+dic_01 = {
+    "nome": 'Ana',
+    "idade": 25,
+    "cidade": 'Serra',
+    1: 78.8,
+    "dic_int":{
+        "saída": 10,
+        "entrada": 78
+    }
+}
+print(dic_01["dic_int"]["saída"])
+dic_01["dic_int"] = True
+print(dic_01["dic_int"])
