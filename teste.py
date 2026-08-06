@@ -22,3 +22,16 @@ print(tupla_01)
 tupla_01 = (True, 78.5, ["casa", 87], True, (45, "Maria"))
 tupla_01[2][1] = False
 print(tupla_01)
+
+# ---------------------------------------------
+
+
+#atribuindo valores de cada posição da tupla à variáveis, mas se alterar o valor da variável não altera o da tupla
+tupla_01 = 1, 2, 3
+a, b, c = tupla_01
+print(a)
+a = 30
+print(a)
+
+#não é tupla
+tupla_01 = (1)
