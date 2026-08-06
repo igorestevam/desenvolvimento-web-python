@@ -73,3 +73,19 @@ print(a | b)
 print(a & b)
 print(a - b)
 print(a ^ b)
+
+# ---------------------------------------------
+
+def pao (func):
+    def wrapper(*args, **kwargs):
+        print("--- Fatia superior do pão ---")
+        resultado = func(*args, **kwargs)
+        print("--- Fatia inferior do pão ---")
+        return resultado
+    return wrapper
+
+@pao # Decorator
+def hamburguer_vegano():
+    print("Recheio do meu hamburguer")
+
+hamburguer_vegano()
