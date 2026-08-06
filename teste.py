@@ -38,7 +38,7 @@ tupla_01 = (1)
 
 # ---------------------------------------------
 
-#dicionários são mutáveis e possuem rótulos, para manter a semântica dos dados
+#dicionários são declarados por chaves e rótulos, são mutáveis e possuem rótulos, para manter a semântica dos dados
 dic_01 = {
     "nome": 'Ana',
     "idade": 25,
@@ -52,3 +52,24 @@ dic_01 = {
 print(dic_01["dic_int"]["saída"])
 dic_01["dic_int"] = True
 print(dic_01["dic_int"])
+
+# ---------------------------------------------
+
+#Conjuntos são delcarados por chaves sem rótulos e permitem operações (motivo de ser diferente das outras)
+frutas = {"maca", "banana", "laranja"}
+print(frutas)
+#adiciona em qualquer lugar do conjunto
+frutas.add("uva")
+print(frutas)
+print("maca" in frutas)
+
+lista_fruta = ["maca", "banana", "laranja"]
+print("maca" in lista_fruta)
+
+#operações com conjuntos
+a = {1, 2, 3}
+b = {2, 3, 4}
+print(a | b)
+print(a & b)
+print(a - b)
+print(a ^ b)
