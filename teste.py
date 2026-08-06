@@ -11,3 +11,14 @@ print(my_list)
 
 matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 print(matrix)
+
+# ---------------------------------------------
+
+#Tupla: imutável e declarada pro parênteses (ou sem parêntese)
+#Lista: mutável e declarada co colchetes
+
+tupla_01 = (1, 78.5, ["casa", 87], True, (45, "Maria"))
+print(tupla_01)
+tupla_01 = (True, 78.5, ["casa", 87], True, (45, "Maria"))
+tupla_01[2][1] = False
+print(tupla_01)
