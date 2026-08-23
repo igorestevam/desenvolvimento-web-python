@@ -26,8 +26,8 @@ BOOKS = [
     },
     {
         "id": 4,
-        "title": "O Pequeno Príncipe",
-        "author": "Antoine de Saint-Exupéry",
+        "title": "O Pequeno Principe",
+        "author": "Antoine de Saint-Exupery",
         "year": 1943,
         "available": True,
     },
@@ -40,7 +40,7 @@ BOOKS = [
     },
     {
         "id": 6,
-        "title": "A Revolução dos Bichos",
+        "title": "A Revolucao dos Bichos",
         "author": "George Orwell",
         "year": 1945,
         "available": False,
@@ -54,7 +54,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
     def _send_json(self, status, data=None, headers=None):
         body = b""
 
-        # se o conteúdo informado não for nulo, transforma o dicionário enviado em json
+        # se o conteudo informado nao for nulo, transforma o dicionario enviado em json
         if data is not None:
             body = json.dumps(data).encode("utf-8")
 
@@ -69,7 +69,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
             for name, value in headers.items():
                 self.send_header(name, value)
 
-        # se o status não for "no content" envia mais um header retornando o tamanho do corpo da resposta
+        # se o status nao for "no content" envia mais um header retornando o tamanho do corpo da resposta
         if status != 204:
             self.send_header("Content-Length", str(len(body)))
 
@@ -83,7 +83,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
     def _get_path(self):
         return urlsplit(self.path).path
 
-    # lê e decodifica o corpo da requisição como JSON, tratando os erros comuns
+    # le e decodifica o corpo da requisicao como JSON, tratando os erros comuns
     def _read_json_body(self):
         content_length = self.headers.get("Content-Length")
 
@@ -105,7 +105,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
 
         return parsed, True
 
-    # valida se os campos obrigatórios estão presentes e possuem o tipo correto
+    # valida se os campos obrigatorios estao presentes e possuem o tipo correto
     def _validate_book_payload(self, payload):
         missing_fields = REQUIRED_FIELDS - set(payload.keys())
         if missing_fields:
@@ -123,7 +123,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": "Field 'author' must be a non-empty string"})
             return False
 
-        # bool é subtipo de int em Python, por isso é preciso verificar se é booleano também
+        # bool e subtipo de int em Python, por isso e preciso verificar se e booleano tambem
         if not isinstance(payload.get("year"), int) or isinstance(payload.get("year"), bool):
             self._send_json(400, {"error": "Field 'year' must be an integer"})
             return False
@@ -142,12 +142,12 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200, BOOKS)
             return
 
-        # se o caminho começar com "/api/books/" (significa que terá algum id de livro depois da barra)
+        # se o caminho comecar com "/api/books/" (significa que tera algum id de livro depois da barra)
         if path.startswith("/api/books/"):
-            # pega a última parte da url, ou seja, o id
+            # pega a ultima parte da url, ou seja, o id
             id_text = path.split("/")[-1]
 
-            # tenta transformar o id que foi pego na url de string para int. Se der errado, retorna id inválido
+            # tenta transformar o id que foi pego na url de string para int. Se der errado, retorna id invalido
             try:
                 book_id = int(id_text)
             except ValueError:
@@ -157,7 +157,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
             # procura o livro na lista que tenha o id informado
             book = next((book for book in BOOKS if book["id"] == book_id), None)
 
-            # se não achar nenhum, retorna "não encontrado"
+            # se nao achar nenhum, retorna "nao encontrado"
             if book is None:
                 self._send_json(404, {"error": "Book not found"})
                 return
@@ -166,7 +166,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200, book)
             return
 
-        # se a rota não estiver correta, retorna "não encontrada"
+        # se a rota nao estiver correta, retorna "nao encontrada"
         self._send_json(404, {"error": "Route not found"})
 
     def do_POST(self):
@@ -229,7 +229,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         path = self._get_path()
 
-        # se a url não começar com "/api/books/" retorna rota não encontrada
+        # se a url nao comecar com "/api/books/" retorna rota nao encontrada
         if not path.startswith("/api/books/"):
             self._send_json(404, {"error": "Route not found"})
             return
@@ -237,7 +237,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
         # pega o id do livro na url
         id_text = path.split("/")[-1]
 
-        # tenta transformar o id informado pela url para int. Se não conseguir, retorna id inválido
+        # tenta transformar o id informado pela url para int. Se nao conseguir, retorna id invalido
         try:
             book_id = int(id_text)
         except ValueError:
