@@ -2,55 +2,59 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlsplit
 import json
 
-LIVROS = [
-    {"id": 1,
-     "titulo": "O Hobbit",
-     "autor": "J.R.R. Tolkien",
-     "ano": 1927,
-     "disponivel": True,
+BOOKS = [
+    {
+        "id": 1,
+        "title": "O Hobbit",
+        "author": "J.R.R. Tolkien",
+        "year": 1937,
+        "available": True,
     },
     {
         "id": 2,
-        "titulo": "1984",
-        "autor": "George Orwell",
-        "ano": 1949,
-        "disponivel": True,
+        "title": "1984",
+        "author": "George Orwell",
+        "year": 1949,
+        "available": True,
     },
     {
         "id": 3,
-        "titulo": "Dom Casmurro",
-        "autor": "Machado de Assis",
-        "ano": 1899,
-        "disponivel": False,
+        "title": "Dom Casmurro",
+        "author": "Machado de Assis",
+        "year": 1899,
+        "available": False,
     },
     {
         "id": 4,
-        "titulo": "O Pequeno Príncipe",
-        "autor": "Antoine de Saint-Exupéry",
-        "ano": 1943,
-        "disponivel": True,
+        "title": "O Pequeno Príncipe",
+        "author": "Antoine de Saint-Exupéry",
+        "year": 1943,
+        "available": True,
     },
     {
         "id": 5,
-        "titulo": "Orgulho e Preconceito",
-        "autor": "Jane Austen",
-        "ano": 1813,
-        "disponivel": True,
+        "title": "Orgulho e Preconceito",
+        "author": "Jane Austen",
+        "year": 1813,
+        "available": True,
     },
     {
         "id": 6,
-        "titulo": "A Revolução dos Bichos",
-        "autor": "George Orwell",
-        "ano": 1945,
-        "disponivel": False,
+        "title": "A Revolução dos Bichos",
+        "author": "George Orwell",
+        "year": 1945,
+        "available": False,
     },
 ]
 
+REQUIRED_FIELDS = {"title", "author", "year", "available"}
+
+
 class RestHTTPRequestHandler(BaseHTTPRequestHandler):
-    def _send_json(self, status, data = None, headers = None):
+    def _send_json(self, status, data=None, headers=None):
         body = b""
 
-        # se o conteúdo informado não for nulo, transforma o dicionário enviado e json
+        # se o conteúdo informado não for nulo, transforma o dicionário enviado em json
         if data is not None:
             body = json.dumps(data).encode("utf-8")
 
@@ -64,7 +68,7 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
         if headers:
             for name, value in headers.items():
                 self.send_header(name, value)
-        
+
         # se o status não for "no content" envia mais um header retornando o tamanho do corpo da resposta
         if status != 204:
             self.send_header("Content-Length", str(len(body)))
@@ -75,173 +79,180 @@ class RestHTTPRequestHandler(BaseHTTPRequestHandler):
         if body:
             self.wfile.write(body)
 
-        # pega apenas o caminho do recurso do servidor (/api/livros)
+    # pega apenas o caminho do recurso do servidor (/api/books)
     def _get_path(self):
         return urlsplit(self.path).path
+
+    # lê e decodifica o corpo da requisição como JSON, tratando os erros comuns
+    def _read_json_body(self):
+        content_length = self.headers.get("Content-Length")
+
+        if content_length is None:
+            self._send_json(411, {"error": "Content-Length is required"})
+            return None, False
+
+        try:
+            length = int(content_length)
+            data = self.rfile.read(length)
+            parsed = json.loads(data)
+        except (ValueError, json.JSONDecodeError):
+            self._send_json(400, {"error": "Invalid JSON"})
+            return None, False
+
+        if not isinstance(parsed, dict):
+            self._send_json(400, {"error": "Expected a JSON object"})
+            return None, False
+
+        return parsed, True
+
+    # valida se os campos obrigatórios estão presentes e possuem o tipo correto
+    def _validate_book_payload(self, payload):
+        missing_fields = REQUIRED_FIELDS - set(payload.keys())
+        if missing_fields:
+            self._send_json(
+                400,
+                {"error": f"Missing required field(s): {sorted(missing_fields)}"}
+            )
+            return False
+
+        if not isinstance(payload.get("title"), str) or not payload["title"].strip():
+            self._send_json(400, {"error": "Field 'title' must be a non-empty string"})
+            return False
+
+        if not isinstance(payload.get("author"), str) or not payload["author"].strip():
+            self._send_json(400, {"error": "Field 'author' must be a non-empty string"})
+            return False
+
+        # bool é subtipo de int em Python, por isso é preciso verificar se é booleano também
+        if not isinstance(payload.get("year"), int) or isinstance(payload.get("year"), bool):
+            self._send_json(400, {"error": "Field 'year' must be an integer"})
+            return False
+
+        if not isinstance(payload.get("available"), bool):
+            self._send_json(400, {"error": "Field 'available' must be a boolean"})
+            return False
+
+        return True
 
     def do_GET(self):
         path = self._get_path()
 
-        # se o caminho for "/api/livros", retorna todos os livros
-        if path == "/api/livros":
-            self._send_json(200, LIVROS)
+        # se o caminho for "/api/books", retorna todos os livros
+        if path == "/api/books":
+            self._send_json(200, BOOKS)
             return
 
-        # se o caminho começar com "/api/livros/" (significa que terá algum id de livro depois da barra)
-        if(path.startswith("/api/livros/")):
+        # se o caminho começar com "/api/books/" (significa que terá algum id de livro depois da barra)
+        if path.startswith("/api/books/"):
             # pega a última parte da url, ou seja, o id
-            id_livro_texto = path.split("/")[-1]
+            id_text = path.split("/")[-1]
 
-            # tenta passar o id que foi pego na url de string para int. Se der errado, retorna id inválido
+            # tenta transformar o id que foi pego na url de string para int. Se der errado, retorna id inválido
             try:
-                id_livro = int(id_livro_texto)
+                book_id = int(id_text)
             except ValueError:
-                self._send_json(400, {"Erro": "Id invalido"})
+                self._send_json(400, {"error": "Invalid id"})
                 return
 
-            # procura o livro no dicionário que tenha o id informado
-            livro = next((livro for livro in LIVROS if livro["id"] == id_livro), None)
+            # procura o livro na lista que tenha o id informado
+            book = next((book for book in BOOKS if book["id"] == book_id), None)
 
-            # se não achar nenhum, retorna "Não encontrado"
-            if livro is None:
-                self._send_json(404, {"Erro": "Livro não encontrado"})
+            # se não achar nenhum, retorna "não encontrado"
+            if book is None:
+                self._send_json(404, {"error": "Book not found"})
                 return
 
             # envia status "Ok" e o livro no corpo do json
-            self._send_json(200, livro)
+            self._send_json(200, book)
             return
 
         # se a rota não estiver correta, retorna "não encontrada"
-        self._send_json(404, {"Erro": "Rota não encontrada"})
+        self._send_json(404, {"error": "Route not found"})
 
     def do_POST(self):
         path = self._get_path()
 
-        if path != "/api/livros":
-            self._send_json(404, {"Erro": "Rota não encontrada"})
+        if path != "/api/books":
+            self._send_json(404, {"error": "Route not found"})
             return
 
-        content_length = self.headers.get("Content-Length")
-
-        # se a quanidade de caracteres for nula, retorna erro
-        if content_length is None:
-            self._send_json(411, {"Erro": "Necessita de Content-Length"})
+        new_book, ok = self._read_json_body()
+        if not ok:
             return
 
-        # tenta transformar para int o tamanho do corpo pego no header e depois transformar de JSON para dicionário em python
-        try:
-            length = int(content_length)
-            data = self.rfile.read(length)
-            novo_livro = json.loads(data)
-        except (ValueError, json.JSONDecodeError):
-            self._send_json(400, {"Erro": "JSON inválido"})
-            return
-
-        # verifica se o novo livro é um dicionário
-        if not isinstance(novo_livro, dict):
-            self._send_json(400, {"Erro": "Esperado um objeto JSON"})
-            return
-        # verifica se o campo ano do novo livro é um inteiro
-        if not isinstance(novo_livro.get("ano"), int):
-            self._send_json(400, {"Erro": "Campo 'ano' deve ser um número inteiro"})
-            return
-        # verifica se o campo disponivel do novo livro é um booleano
-        if not isinstance(novo_livro.get("disponivel"), bool):
-            self._send_json(400, {"Erro": "Campo 'disponivel' deve ser um booleano"})
-            return
-
-        # pega os campos obrigatórios que não estão em novo_livro
-        campos_nao_presentes = {"titulo", "autor", "ano", "disponivel"} - set(novo_livro.keys())
-
-        # verifica se existem campos não informados em novo_livro
-        if campos_nao_presentes:
-            self._send_json(400, {"Erro": f"Campo(s) obrigatório(s) ausente(s): {list(campos_nao_presentes)}"})
+        if not self._validate_book_payload(new_book):
             return
 
         # cria um id novo autoincrementado
-        novo_id = max((livro["id"] for livro in LIVROS), default=0) + 1
+        new_id = max((book["id"] for book in BOOKS), default=0) + 1
 
-        # associa o novo id ao novo livro e coloca ele na lista de dicionarios "LIVRO"
-        novo_livro["id"] = novo_id
-        LIVROS.append(novo_livro)
+        # associa o novo id ao novo livro e coloca ele na lista "BOOKS"
+        new_book["id"] = new_id
+        BOOKS.append(new_book)
 
         # envia o JSON com o status "criado", os dados do novo livro e a url em que ele se encontra
-        self._send_json(201, novo_livro, headers={"Location": f"/api/livros/{novo_id}"})
+        self._send_json(201, new_book, headers={"Location": f"/api/books/{new_id}"})
 
     def do_PUT(self):
         path = self._get_path()
 
-        if not path.startswith("/api/livros/"):
-            self._send_json(404, {"Erro": "Rota não encontrada"})
+        if not path.startswith("/api/books/"):
+            self._send_json(404, {"error": "Route not found"})
             return
 
-        id_texto = path.split("/")[-1]
+        id_text = path.split("/")[-1]
         try:
-            id_livro = int(id_texto)
+            book_id = int(id_text)
         except ValueError:
-            self._send_json(400, {"Erro": "Id inválido"})
+            self._send_json(400, {"error": "Invalid id"})
             return
 
-        livro = next((livro for livro in LIVROS if livro["id"] == id_livro), None)
-        if livro is None:
-            self._send_json(404, {"Erro": "Livro não encontrado"})
+        book = next((book for book in BOOKS if book["id"] == book_id), None)
+        if book is None:
+            self._send_json(404, {"error": "Book not found"})
             return
 
-        content_length = self.headers.get("Content-Length")
-        if content_length is None:
-            self._send_json(411, {"Erro": "Necessita de Content-Length"})
+        updated_data, ok = self._read_json_body()
+        if not ok:
             return
 
-        try:
-            length = int(content_length)
-            data = self.rfile.read(length)
-            dados_atualizados = json.loads(data)
-        except (ValueError, json.JSONDecodeError):
-            self._send_json(400, {"Erro": "JSON inválido"})
+        if not self._validate_book_payload(updated_data):
             return
 
-        if not isinstance(dados_atualizados, dict):
-            self._send_json(400, {"Erro": "Esperado um objeto JSON"})
-            return
+        book["title"] = updated_data["title"]
+        book["author"] = updated_data["author"]
+        book["year"] = updated_data["year"]
+        book["available"] = updated_data["available"]
 
-        campos_faltantes = {"titulo", "autor", "ano", "disponivel"} - set(dados_atualizados.keys())
-        if campos_faltantes:
-            self._send_json(400, {"Erro": f"Campo(s) obrigatório(s) ausente(s): {list(campos_faltantes)}"})
-            return
-
-        livro["titulo"] = dados_atualizados["titulo"]
-        livro["autor"] = dados_atualizados["autor"]
-        livro["ano"] = dados_atualizados["ano"]
-        livro["disponivel"] = dados_atualizados["disponivel"]
-
-        self._send_json(200, livro)
+        self._send_json(200, book)
 
     def do_DELETE(self):
         path = self._get_path()
 
-        # se a url não começar com "/api/livros/" retorna rota não encontrada
-        if not path.startswith("/api/livros/"):
-            self._send_json(404, {"Erro": "Rota não encontrada"})
+        # se a url não começar com "/api/books/" retorna rota não encontrada
+        if not path.startswith("/api/books/"):
+            self._send_json(404, {"error": "Route not found"})
             return
 
         # pega o id do livro na url
-        id_livro_texto = path.split("/")[-1]
+        id_text = path.split("/")[-1]
 
         # tenta transformar o id informado pela url para int. Se não conseguir, retorna id inválido
         try:
-            id_livro = int(id_livro_texto)
+            book_id = int(id_text)
         except ValueError:
-            self._send_json(400, {"Erro": "Id inválido"})
+            self._send_json(400, {"error": "Invalid id"})
             return
 
-        # procura em LIVROS o livro com o id procurado e exclui ele da lista e retorna "no content"
-        for index, livro in enumerate(LIVROS):
-            if livro["id"] == id_livro:
-                LIVROS.pop(index)
+        # procura em BOOKS o livro com o id procurado, exclui ele da lista e retorna "no content"
+        for index, book in enumerate(BOOKS):
+            if book["id"] == book_id:
+                BOOKS.pop(index)
                 self._send_json(204)
                 return
 
-        self._send_json(404, {"Erro": "Livro não encontrado"})
+        self._send_json(404, {"error": "Book not found"})
+
 
 def run(server_class=HTTPServer,
         handler_class=RestHTTPRequestHandler,
@@ -250,9 +261,10 @@ def run(server_class=HTTPServer,
     httpd = server_class(server_address, handler_class)
 
     print(f"Servidor HTTP disponivel em "
-            f"http://127.0.0.1:{port}")
-    
+          f"http://127.0.0.1:{port}")
+
     httpd.serve_forever()
+
 
 if __name__ == "__main__":
     run()
