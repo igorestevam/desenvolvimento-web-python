@@ -1,4 +1,4 @@
-#Utilizando Programação Orientada ao Objeto (sem camadas de seurança) para programar
+#Utilizando Programação Orientada ao Objeto (sem camadas de segurança) para programar
 
 class Produto:
     def __init__(self, codigo: int, descricao: str, preco: float) -> None:
