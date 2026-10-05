@@ -2,7 +2,7 @@
     # 1. declaracao de criacao do app
     app = Flask(__name__)
 
-    # 2. especificacao da confguracao
+    # 2. especificacao da configuracao
     app.config
 
     # 3. registro de rotas
